@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스피드 클릭커! - 한계 도전 게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+        .click-effect:active {
+            animation: pop 0.1s ease;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <header class="w-full py-6 px-4 text-center border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-md">
+        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            ⚡ 스피드 클릭커!
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">손가락의 한계를 시험하고 최고 기록을 세워보세요!</p>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center p-4 max-w-md mx-auto w-full">
+        <div id="game-card" class="w-full bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl flex flex-col items-center relative overflow-hidden">
+            
+            <div id="setup-section" class="w-full flex flex-col items-center space-y-5">
+                
+                <div class="w-full grid grid-cols-2 gap-2 bg-slate-800/80 p-1.5 rounded-2xl border border-slate-700/60">
+                    <button id="mode-normal-btn" class="py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md transition">일반 모드</button>
+                    <button id="mode-challenge-btn" class="py-2.5 rounded-xl font-bold text-sm text-slate-400 hover:text-white transition">챌린지 모드</button>
+                </div>
+
+                <div class="w-full space-y-2">
+                    <label for="time-select" class="block text-sm font-semibold text-slate-300">도전 시간 설정</label>
+                    <div class="relative">
+                        <select id="time-select" class="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-4 py-3.5 text-white font-medium appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer">
+                            <option value="10">10초</option>
+                            <option value="15" selected>15초</option>
+                            <option value="20">20초</option>
+                            <option value="25">25초</option>
+                            <option value="30">30초</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="challenge-target-wrapper" class="w-full space-y-2 hidden">
+                    <label for="target-select" class="block text-sm font-semibold text-pink-400">목표 클릭 횟수 (최대 300회)</label>
+                    <div class="relative">
+                        <select id="target-select" class="w-full bg-slate-800/90 border border-pink-500/50 rounded-2xl px-4 py-3.5 text-white font-medium appearance-none focus:outline-none focus:ring-2 focus:ring-pink-500 transition cursor-pointer">
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full bg-slate-800/40 rounded-2xl p-4 border border-slate-800/80 text-center">
+                    <span id="best-score-label" class="text-xs text-slate-400 block mb-1">내 최고 기록</span>
+                    <span id="best-score" class="text-2xl font-bold text-indigo-400">0회</span>
+                </div>
+
+                <button id="start-btn" class="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/25 transition transform active:scale-95 text-lg">
+                    🚀 게임 시작하기
+                </button>
+            </div>
+
+            <div id="gameplay-section" class="w-full flex flex-col items-center hidden space-y-6">
+                <div class="w-full flex justify-between items-center bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50">
+                    <div class="text-center flex-1">
+                        <span class="text-xs text-slate-400 block">남은 시간</span>
+                        <span id="timer-display" class="text-2xl font-extrabold text-amber-400">15.0s</span>
+                    </div>
+                    <div class="h-8 w-px bg-slate-700 mx-2"></div>
+                    <div class="text-center flex-1">
+                        <span class="text-xs text-slate-400 block" id="counter-label">클릭 횟수</span>
+                        <span id="count-display" class="text-2xl font-extrabold text-indigo-400">0</span>
+                    </div>
+                </div>
+
+                <div id="gameplay-challenge-goal" class="w-full bg-pink-500/10 border border-pink-500/30 rounded-xl py-2 px-4 text-center hidden">
+                    <span class="text-xs text-pink-300 font-medium">🎯 목표: <strong id="goal-target-text" class="text-white">0</strong>회 돌파하기</span>
+                </div>
+
+                <div class="py-6 flex justify-center w-full">
+                    <button id="click-btn" class="click-effect w-48 h-48 md:w-56 md:h-56 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 shadow-xl shadow-indigo-500/30 border-4 border-indigo-400/30 flex flex-col items-center justify-center text-white focus:outline-none transition-all select-none">
+                        <span class="text-2xl font-extrabold uppercase tracking-wider drop-shadow">CLICK!</span>
+                        <span id="live-cps" class="text-xs font-medium text-indigo-200 mt-1">0.0 CPS</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="result-section" class="w-full flex flex-col items-center hidden space-y-6 text-center">
+                <div id="result-icon-bg" class="inline-flex p-3 bg-indigo-500/10 rounded-full text-indigo-400 mb-1 border border-indigo-500/20">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="result-title" class="text-2xl font-bold text-white">결과 발표!</h2>
+                    <p id="result-subtitle" class="text-sm text-slate-400 mt-1">수고하셨습니다. 기록을 확인해보세요.</p>
+                </div>
+
+                <div class="w-full grid grid-cols-2 gap-3">
+                    <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50">
+                        <span class="text-xs text-slate-400 block" id="result-primary-label">총 클릭 수</span>
+                        <span id="final-score" class="text-2xl font-black text-indigo-400">0회</span>
+                    </div>
+                    <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50">
+                        <span class="text-xs text-slate-400 block">초당 클릭 (CPS)</span>
+                        <span id="final-cps" class="text-2xl font-black text-pink-400">0.0</span>
+                    </div>
+                </div>
+
+                <div id="new-record-badge" class="hidden w-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-2xl p-3 text-amber-300 font-semibold text-sm animate-pulse">
+                    ✨ 와우! 최고 기록을 갈아치웠어요! ✨
+                </div>
+
+                <button id="retry-btn" class="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/25 transition transform active:scale-95 text-lg">
+                    🔄 다시 도전하기
+                </button>
+            </div>
+
+            <div id="golden-hands-section" class="w-full flex flex-col items-center hidden space-y-6 text-center">
+                <div class="p-4 bg-amber-500/20 rounded-full text-amber-400 border border-amber-500/40 animate-bounce">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                </div>
+                <div class="space-y-3">
+                    <h2 class="text-3xl md:text-4xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-400 bg-clip-text text-transparent leading-snug">
+                        당신의 손은 정말 금손입니다!
+                    </h2>
+                    <p class="text-sm md:text-base text-slate-300 leading-relaxed font-medium">
+                        1초에 무려 50번 넘게 클릭하셨어요!<br>근육이 엄청 빠르시네요!
+                    </p>
+                </div>
+                <button id="golden-retry-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg shadow-amber-500/30 transition transform active:scale-95 text-lg">
+                    다시 해보기
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="w-full py-4 text-center text-xs text-slate-500 border-t border-slate-800/60">
+        Copyright 2026 Super Rice Jamjam Studio. All rights reserved.
+    </footer>
+
+    <script>
+        const audioPoolSize = 8;
+        const audioPool = [];
+        let poolIndex = 0;
+
+        for (let i = 0; i < audioPoolSize; i++) {
+            const snd = new Audio('click.mp3');
+            snd.volume = 0.6;
+            audioPool.push(snd);
+        }
+
+        const failAudio = new Audio('fail.mp3');
+        failAudio.volume = 0.7;
+
+        const successAudio = new Audio('success.mp3');
+        successAudio.volume = 0.8;
+
+        const endingAudio = new Audio('ending.mp3');
+        endingAudio.loop = true;
+        endingAudio.volume = 0.8;
+
+        function playClickSound() {
+            try {
+                const snd = audioPool[poolIndex];
+                snd.currentTime = 0;
+                snd.play().catch(e => {});
+                poolIndex = (poolIndex + 1) % audioPoolSize;
+            } catch (e) {}
+        }
+
+        function playFailSound() {
+            try {
+                failAudio.currentTime = 0;
+                failAudio.play().catch(e => {});
+            } catch (e) {}
+        }
+
+        function playSuccessSound() {
+            try {
+                successAudio.currentTime = 0;
+                successAudio.play().catch(e => {});
+            } catch (e) {}
+        }
+
+        function playEndingAudio() {
+            try {
+                endingAudio.currentTime = 0;
+                endingAudio.play().catch(e => {});
+            } catch (e) {}
+        }
+
+        function stopEndingAudio() {
+            try {
+                endingAudio.pause();
+                endingAudio.currentTime = 0;
+            } catch (e) {}
+        }
+
+        const setupSection = document.getElementById('setup-section');
+        const gameplaySection = document.getElementById('gameplay-section');
+        const resultSection = document.getElementById('result-section');
+        const goldenHandsSection = document.getElementById('golden-hands-section');
+        
+        const modeNormalBtn = document.getElementById('mode-normal-btn');
+        const modeChallengeBtn = document.getElementById('mode-challenge-btn');
+        const challengeTargetWrapper = document.getElementById('challenge-target-wrapper');
+        
+        const timeSelect = document.getElementById('time-select');
+        const targetSelect = document.getElementById('target-select');
+        const startBtn = document.getElementById('start-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const goldenRetryBtn = document.getElementById('golden-retry-btn');
+        const clickBtn = document.getElementById('click-btn');
+        
+        const timerDisplay = document.getElementById('timer-display');
+        const countDisplay = document.getElementById('count-display');
+        const counterLabel = document.getElementById('counter-label');
+        const liveCps = document.getElementById('live-cps');
+        const gameplayChallengeGoal = document.getElementById('gameplay-challenge-goal');
+        const goalTargetText = document.getElementById('goal-target-text');
+        
+        const finalScore = document.getElementById('final-score');
+        const finalCps = document.getElementById('final-cps');
+        const bestScoreDisplay = document.getElementById('best-score');
+        const bestScoreLabel = document.getElementById('best-score-label');
+        const newRecordBadge = document.getElementById('new-record-badge');
+        const resultTitle = document.getElementById('result-title');
+        const resultSubtitle = document.getElementById('result-subtitle');
+        const resultPrimaryLabel = document.getElementById('result-primary-label');
+        const resultIconBg = document.getElementById('result-icon-bg');
+
+        let isChallengeMode = false;
+        let totalTime = 15;
+        let timeLeft = 15;
+        let clickCount = 0;
+        let targetCount = 50;
+        let gameTimer = null;
+        let isPlaying = false;
+        let startTime = 0;
+
+        const baseValues = [50, 100, 150, 200, 250, 300];
+
+        function updateTargetOptions() {
+            const timeVal = parseInt(timeSelect.value);
+            const multiplier = timeVal / 10;
+            const previousSelection = parseInt(targetSelect.value) || (baseValues[0] * multiplier);
+
+            targetSelect.innerHTML = '';
+            baseValues.forEach(val => {
+                let scaledVal = val * multiplier;
+                if (scaledVal > 300) scaledVal = 300;
+                
+                const opt = document.createElement('option');
+                opt.value = scaledVal;
+                opt.textContent = `${scaledVal}회`;
+                targetSelect.appendChild(opt);
+            });
+
+            if (Array.from(targetSelect.options).some(o => o.value == previousSelection)) {
+                targetSelect.value = previousSelection;
+            } else {
+                targetSelect.selectedIndex = 0;
+            }
+        }
+
+        function getBestScoreKey() {
+            if (isChallengeMode) {
+                return `speed_click_challenge_${totalTime}_${targetSelect.value}`;
+            }
+            return `speed_click_best_${totalTime}`;
+        }
+
+        function loadBestScore() {
+            const key = getBestScoreKey();
+            const best = localStorage.getItem(key) || 0;
+            
+            if (isChallengeMode) {
+                bestScoreLabel.textContent = `최단 완료 시간 (Best Time)`;
+                if (best == 0) {
+                    bestScoreDisplay.textContent = `기록 없음`;
+                } else {
+                    bestScoreDisplay.textContent = `${parseFloat(best).toFixed(2)}초`;
+                }
+            } else {
+                bestScoreLabel.textContent = `최고 클릭 횟수 (Best Score)`;
+                bestScoreDisplay.textContent = `${best}회`;
+            }
+            return best;
+        }
+
+        modeNormalBtn.addEventListener('click', () => {
+            isChallengeMode = false;
+            modeNormalBtn.className = "py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md transition";
+            modeChallengeBtn.className = "py-2.5 rounded-xl font-bold text-sm text-slate-400 hover:text-white transition";
+            challengeTargetWrapper.classList.add('hidden');
+            loadBestScore();
+        });
+
+        modeChallengeBtn.addEventListener('click', () => {
+            isChallengeMode = true;
+            modeChallengeBtn.className = "py-2.5 rounded-xl font-bold text-sm bg-pink-600 text-white shadow-md transition";
+            modeNormalBtn.className = "py-2.5 rounded-xl font-bold text-sm text-slate-400 hover:text-white transition";
+            challengeTargetWrapper.classList.remove('hidden');
+            updateTargetOptions();
+            loadBestScore();
+        });
+
+        timeSelect.addEventListener('change', (e) => {
+            totalTime = parseInt(e.target.value);
+            if (isChallengeMode) {
+                updateTargetOptions();
+            }
+            loadBestScore();
+        });
+
+        targetSelect.addEventListener('change', () => {
+            loadBestScore();
+        });
+
+        loadBestScore();
+
+        startBtn.addEventListener('click', () => {
+            stopEndingAudio();
+            totalTime = parseInt(timeSelect.value);
+            timeLeft = totalTime;
+            clickCount = 0;
+            isPlaying = true;
+
+            setupSection.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            goldenHandsSection.classList.add('hidden');
+            gameplaySection.classList.remove('hidden');
+
+            if (isChallengeMode) {
+                targetCount = parseInt(targetSelect.value);
+                timerDisplay.textContent = `0.0s`;
+                countDisplay.textContent = `0 / ${targetCount}`;
+                counterLabel.textContent = `달성 진행도`;
+                gameplayChallengeGoal.classList.remove('hidden');
+                goalTargetText.textContent = targetCount;
+            } else {
+                timerDisplay.textContent = `${timeLeft.toFixed(1)}s`;
+                countDisplay.textContent = `0`;
+                counterLabel.textContent = `클릭 횟수`;
+                gameplayChallengeGoal.classList.add('hidden');
+            }
+
+            liveCps.textContent = `0.0 CPS`;
+            startTime = Date.now();
+
+            const intervalMs = 50;
+            gameTimer = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+
+                if (isChallengeMode) {
+                    timerDisplay.textContent = `${elapsed.toFixed(1)}s`;
+                    const currentCps = elapsed > 0 ? (clickCount / elapsed).toFixed(1) : 0;
+                    liveCps.textContent = `${currentCps} CPS`;
+
+                    if (clickCount >= targetCount) {
+                        endChallengeGame(true, elapsed);
+                    } else if (elapsed >= totalTime) {
+                        endChallengeGame(false, totalTime);
+                    }
+                } else {
+                    timeLeft = Math.max(0, totalTime - elapsed);
+                    timerDisplay.textContent = `${timeLeft.toFixed(1)}s`;
+                    
+                    const currentCps = elapsed > 0 ? (clickCount / elapsed).toFixed(1) : 0;
+                    liveCps.textContent = `${currentCps} CPS`;
+
+                    if (timeLeft <= 0) {
+                        endNormalGame();
+                    }
+                }
+            }, intervalMs);
+        });
+
+        clickBtn.addEventListener('click', () => {
+            if (!isPlaying) return;
+            clickCount++;
+            
+            playClickSound();
+            
+            if (isChallengeMode) {
+                countDisplay.textContent = `${clickCount} / ${targetCount}`;
+            } else {
+                countDisplay.textContent = clickCount;
+            }
+
+            clickBtn.classList.add('scale-95');
+            setTimeout(() => clickBtn.classList.remove('scale-95'), 50);
+        });
+
+        function checkGoldenHands(elapsedTimeUsed) {
+            const currentCps = elapsedTimeUsed > 0 ? (clickCount / elapsedTimeUsed) : 0;
+            if (clickCount >= 500 && currentCps >= 50) {
+                gameplaySection.classList.add('hidden');
+                resultSection.classList.add('hidden');
+                setupSection.classList.add('hidden');
+                goldenHandsSection.classList.remove('hidden');
+                playEndingAudio();
+                return true;
+            }
+            return false;
+        }
+
+        function endNormalGame() {
+            isPlaying = false;
+            clearInterval(gameTimer);
+
+            const elapsedActual = totalTime;
+            if (checkGoldenHands(elapsedActual)) return;
+
+            gameplaySection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+
+            resultTitle.textContent = "🎉 멋지게 완료했어요!";
+            resultSubtitle.textContent = "손가락 운동 제대로 하셨네요! 결과입니다.";
+            resultPrimaryLabel.textContent = "총 클릭 수";
+            finalScore.textContent = `${clickCount}회`;
+            const avgCps = (clickCount / totalTime).toFixed(1);
+            finalCps.textContent = avgCps;
+            resultIconBg.className = "inline-flex p-3 bg-indigo-500/10 rounded-full text-indigo-400 mb-1 border border-indigo-500/20";
+
+            const currentBest = parseInt(localStorage.getItem(getBestScoreKey()) || 0);
+            if (clickCount > currentBest) {
+                localStorage.setItem(getBestScoreKey(), clickCount);
+                newRecordBadge.classList.remove('hidden');
+                bestScoreDisplay.textContent = `${clickCount}회`;
+            } else {
+                newRecordBadge.classList.add('hidden');
+            }
+        }
+
+        function endChallengeGame(success, finalTimeElapsed) {
+            isPlaying = false;
+            clearInterval(gameTimer);
+
+            if (checkGoldenHands(finalTimeElapsed)) return;
+
+            gameplaySection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+
+            finalScore.textContent = `${finalTimeElapsed.toFixed(2)}초`;
+            const avgCps = (clickCount / finalTimeElapsed).toFixed(1);
+            finalCps.textContent = avgCps;
+            resultPrimaryLabel.textContent = "소요 시간";
+
+            const key = getBestScoreKey();
+            const existingBest = parseFloat(localStorage.getItem(key) || 0);
+
+            if (success) {
+                const diff = clickCount - targetCount;
+                if (diff >= 50 && clickCount >= 250) {
+                    playSuccessSound();
+                } else if (diff >= 50) {
+                    playSuccessSound();
+                }
+
+                resultTitle.textContent = "🏆 챌린지 성공!";
+                resultSubtitle.textContent = `목표 ${targetCount}회를 멋지게 돌파하셨습니다!`;
+                resultIconBg.className = "inline-flex p-3 bg-pink-500/10 rounded-full text-pink-400 mb-1 border border-pink-500/20";
+
+                if (existingBest === 0 || finalTimeElapsed < existingBest) {
+                    localStorage.setItem(key, finalTimeElapsed);
+                    newRecordBadge.classList.remove('hidden');
+                    bestScoreDisplay.textContent = `${finalTimeElapsed.toFixed(2)}초`;
+                } else {
+                    newRecordBadge.classList.add('hidden');
+                }
+            } else {
+                playFailSound();
+
+                resultTitle.textContent = "💦 아쉽게 실패했어요...";
+                resultSubtitle.textContent = `시간 내에 목표를 채우지 못했습니다. 다시 도전해보세요!`;
+                resultIconBg.className = "inline-flex p-3 bg-amber-500/10 rounded-full text-amber-400 mb-1 border border-amber-500/20";
+                newRecordBadge.classList.add('hidden');
+            }
+        }
+
+        retryBtn.addEventListener('click', () => {
+            stopEndingAudio();
+            resultSection.classList.add('hidden');
+            setupSection.classList.remove('hidden');
+            loadBestScore();
+        });
+
+        goldenRetryBtn.addEventListener('click', () => {
+            stopEndingAudio();
+            goldenHandsSection.classList.add('hidden');
+            setupSection.classList.remove('hidden');
+            loadBestScore();
+        });
+    </script>
+</body>
+</html>
